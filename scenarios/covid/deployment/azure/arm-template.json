@@ -83,6 +83,13 @@
       "metadata": {
         "description": "Pipeline configuration"
       }
+    },
+    "ContractStorageMode": {
+      "defaultValue": "ccf",
+      "type": "string",
+      "metadata": {
+        "description": "Contract storage mode: ccf or blob"
+      }
     }
   },
   "resources": [
@@ -146,6 +153,10 @@
                 {
                   "name": "PipelineConfiguration",
                   "value": "[parameters('PipelineConfiguration')]"
+                },
+                {
+                  "name": "CONTRACT_STORAGE_MODE",
+                  "value": "[parameters('ContractStorageMode')]"
                 }
               ],
               "volumeMounts": [

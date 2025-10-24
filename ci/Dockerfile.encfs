@@ -12,6 +12,13 @@ RUN chmod +x /*.sh; date > /made-date
 COPY external/contract-ledger/pyscitt/dist/pyscitt-0.0.1-py3-none-any.whl .
 RUN pip3 install pyscitt-0.0.1-py3-none-any.whl
 
+# Install Azure Blob Storage client and CBOR support
+RUN pip3 install azure-storage-blob cbor2
+
+# Copy contract fetch script for blob storage mode
+COPY scenarios/covid/deployment/azure/fetch_contract_from_blob.py /
+RUN chmod +x /fetch_contract_from_blob.py
+
 # Install OPA and copy policy
 RUN wget -O opa https://github.com/open-policy-agent/opa/releases/download/v0.53.0/opa_linux_amd64_static
 RUN chmod 755 ./opa

@@ -25,8 +25,20 @@ fi
 
 echo Obtaining contract service parameters...
 
-CONTRACT_SERVICE_URL=${CONTRACT_SERVICE_URL:-"https://localhost:8000"}
-export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters | base64 --wrap=0)
+# Support both CCF and blob storage modes
+CONTRACT_STORAGE_MODE=${CONTRACT_STORAGE_MODE:-"ccf"}
+echo "Contract storage mode: $CONTRACT_STORAGE_MODE"
+
+if [ "$CONTRACT_STORAGE_MODE" = "blob" ]; then
+  echo "Using blob storage mode - skipping CCF service check"
+  # For blob mode, we don't need CCF service parameters
+  export CONTRACT_SERVICE_PARAMETERS=""
+  export CONTRACT_SERVICE_URL=""
+else
+  echo "Using CCF mode - obtaining service parameters"
+  CONTRACT_SERVICE_URL=${CONTRACT_SERVICE_URL:-"https://localhost:8000"}
+  export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters | base64 --wrap=0)
+fi
 
 echo Computing CCE policy...
 envsubst < ../../policy/policy-in-template.json > /tmp/policy-in.json
@@ -120,6 +132,19 @@ function generate_encrypted_filesystem_information() {
     jq '.azure_filesystems[4].key_derivation.label = "OutputFilesystemEncryptionKey"' | \
     jq '.azure_filesystems[4].key_derivation.salt = "9b53cddbe5b78a0b912a8f05f341bcd4dd839ea85d26a08efaef13e696d999f4"'`
 
+  # Add storage credentials for blob mode contract retrieval
+  if [ "$CONTRACT_STORAGE_MODE" = "blob" ]; then
+    if [[ -n "${AZURE_STORAGE_ACCOUNT_NAME}" ]] && [[ -n "${AZURE_STORAGE_ACCOUNT_KEY}" ]]; then
+      echo "Injecting storage credentials for blob mode contract retrieval..."
+      TMP=`echo $TMP | \
+        jq --arg account "$AZURE_STORAGE_ACCOUNT_NAME" '.storage_account_name = $account' | \
+        jq --arg key "$AZURE_STORAGE_ACCOUNT_KEY" '.storage_account_key = $key' | \
+        jq --arg container "${CONTRACT_CONTAINER_NAME:-pilot-contracts}" '.contract_container_name = $container'`
+    else
+      echo "WARNING: AZURE_STORAGE_ACCOUNT_NAME or AZURE_STORAGE_ACCOUNT_KEY not set for blob mode"
+    fi
+  fi
+
   ENCRYPTED_FILESYSTEM_INFORMATION=`echo $TMP | base64 --wrap=0`
 }
 
@@ -136,6 +161,7 @@ TMP=`echo $TMP | jq '.ContractService.value = env.CONTRACT_SERVICE_URL'`
 TMP=`echo $TMP | jq '.ContractServiceParameters.value = env.CONTRACT_SERVICE_PARAMETERS'`
 TMP=`echo $TMP | jq '.Contracts.value = env.CONTRACTS'`
 TMP=`echo $TMP | jq '.PipelineConfiguration.value = env.PIPELINE_CONFIGURATION'`
+TMP=`echo $TMP | jq '.ContractStorageMode.value = env.CONTRACT_STORAGE_MODE'`
 echo $TMP > /tmp/aci-parameters.json
 
 echo Deploying training clean room...

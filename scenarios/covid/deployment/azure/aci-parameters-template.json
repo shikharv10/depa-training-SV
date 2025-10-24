@@ -19,5 +19,8 @@
   },
   "PipelineConfiguration": {
     "value": ""
+  },
+  "ContractStorageMode": {
+    "value": ""
   }
 }

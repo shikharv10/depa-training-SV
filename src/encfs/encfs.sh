@@ -1,19 +1,9 @@
 #!/bin/sh
 
-set -e 
+set -e
 
-if [[ -z "${Contracts}" ]]; then 
+if [[ -z "${Contracts}" ]]; then
   echo "Contract not specified"
-  exit 1
-fi
-
-if [[ -z "${ContractServiceParameters}" ]]; then 
-  echo "Contract service parameters not specified"
-  exit 1
-fi
-
-if [[ -z "${ContractService}" ]]; then 
-  echo "Contract service not specified"
   exit 1
 fi
 
@@ -28,17 +18,64 @@ fi
 
 echo EncfsSideCarArgs = $EncfsSideCarArgs
 
-echo "Saving contract service parameters"
-TRUST_STORE=/tmp/trust_store
-mkdir -p $TRUST_STORE
-echo $ContractServiceParameters | base64 -d > $TRUST_STORE/scitt.json
+# Check storage mode - support both CCF and Blob Storage
+CONTRACT_STORAGE_MODE="${CONTRACT_STORAGE_MODE:-ccf}"
 
-echo "Retrieving contract..."
-scitt retrieve-contracts /tmp/contracts \
-    --url ${ContractService} \
-    --service-trust-store $TRUST_STORE \
-    --from $Contracts \
-    --development
+echo "Contract storage mode: $CONTRACT_STORAGE_MODE"
+
+if [ "$CONTRACT_STORAGE_MODE" = "blob" ]; then
+  echo "Using Azure Blob Storage for contract retrieval"
+
+  # Extract storage credentials from EncfsSideCarArgs
+  CONFIG_JSON=$(echo "$EncfsSideCarArgs" | base64 -d)
+  export AZURE_STORAGE_ACCOUNT_NAME=$(echo "$CONFIG_JSON" | jq -r '.storage_account_name // empty')
+  export AZURE_STORAGE_ACCOUNT_KEY=$(echo "$CONFIG_JSON" | jq -r '.storage_account_key // empty')
+  export CONTRACT_CONTAINER_NAME=$(echo "$CONFIG_JSON" | jq -r '.contract_container_name // "pilot-contracts"')
+  export CONTRACT_VERSION="$Contracts"
+
+  if [[ -z "$AZURE_STORAGE_ACCOUNT_NAME" ]] || [[ -z "$AZURE_STORAGE_ACCOUNT_KEY" ]]; then
+    echo "ERROR: Storage credentials not found in EncfsSideCarArgs"
+    echo "Expected JSON fields: storage_account_name, storage_account_key"
+    exit 1
+  fi
+
+  echo "Storage Account: $AZURE_STORAGE_ACCOUNT_NAME"
+  echo "Container: $CONTRACT_CONTAINER_NAME"
+  echo "Contract Version: $CONTRACT_VERSION"
+
+  # Fetch and verify signed contract from blob storage
+  echo "Fetching signed contract from blob storage..."
+  if ! /fetch_contract_from_blob.py; then
+    echo "ERROR: Failed to fetch contract from blob storage"
+    exit 1
+  fi
+
+else
+  echo "Using CCF for contract retrieval"
+
+  # Original CCF-based retrieval
+  if [[ -z "${ContractServiceParameters}" ]]; then
+    echo "Contract service parameters not specified"
+    exit 1
+  fi
+
+  if [[ -z "${ContractService}" ]]; then
+    echo "Contract service not specified"
+    exit 1
+  fi
+
+  echo "Saving contract service parameters"
+  TRUST_STORE=/tmp/trust_store
+  mkdir -p $TRUST_STORE
+  echo $ContractServiceParameters | base64 -d > $TRUST_STORE/scitt.json
+
+  echo "Retrieving contract from CCF..."
+  scitt retrieve-contracts /tmp/contracts \
+      --url ${ContractService} \
+      --service-trust-store $TRUST_STORE \
+      --from $Contracts \
+      --development
+fi
 
 ContractPayload="/tmp/contracts/2.$Contracts.json"
 if [ ! -f $ContractPayload ]; then 
