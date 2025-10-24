@@ -19,5 +19,17 @@
   },
   "PipelineConfiguration": {
     "value": ""
+  },
+  "registryUsername": {
+    "value": ""
+  },
+  "registryPassword": {
+    "value": ""
+  },
+  "storageAccountName": {
+    "value": ""
+  },
+  "storageAccountKey": {
+    "value": ""
   }
 }

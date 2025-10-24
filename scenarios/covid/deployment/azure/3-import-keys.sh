@@ -1,5 +1,28 @@
 #!/bin/bash
 
+# NEW: Contract storage mode
+CONTRACT_STORAGE_MODE=${CONTRACT_STORAGE_MODE:-"ccf"}
+
+echo "Contract storage mode: $CONTRACT_STORAGE_MODE"
+
+# NEW: Get trust store based on mode
+if [ "$CONTRACT_STORAGE_MODE" == "blob" ]; then
+    echo "Fetching trust store from blob storage..."
+    TRUST_STORE_JSON=$(az storage blob download \
+        --account-name $AZURE_STORAGE_ACCOUNT_NAME \
+        --container-name pilot-contracts \
+        --name trust_store.json \
+        --account-key $AZURE_STORAGE_ACCOUNT_KEY \
+        --query content -o tsv)
+    export CONTRACT_SERVICE_PARAMETERS=$(echo "$TRUST_STORE_JSON" | base64 -w 0)
+else
+    echo "Fetching trust store from contract service..."
+    CONTRACT_SERVICE_URL=${CONTRACT_SERVICE_URL:-"http://localhost:8000"}
+    export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters | base64 -w 0)
+fi
+
+# PREVIOUS CODE CONTINUES BELOW 
+
 # Function to import a key with a given key ID and key material into AKV
 # The key is bound to a key release policy with host data defined in the environment variable CCE_POLICY_HASH
 function import_key() {

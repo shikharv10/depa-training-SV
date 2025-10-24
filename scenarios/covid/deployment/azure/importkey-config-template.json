@@ -17,10 +17,7 @@
     "label": ""
   },
   "claims": [
-    [{
-      "claim": "x-ms-sevsnpvm-hostdata",
-      "equals": ""
-    },
+    [
     {
       "claim": "x-ms-compliance-status",
       "equals": "azure-compliant-uvm"

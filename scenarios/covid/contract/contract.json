@@ -19,7 +19,7 @@
           "authority": {
             "endpoint": "sharedneu.neu.attest.azure.net"
           },
-          "endpoint": ""
+          "endpoint": "https://depa-pilot-kv-1873.vault.azure.net"
         }
       }
     },
@@ -35,7 +35,7 @@
           "authority": {
             "endpoint": "sharedneu.neu.attest.azure.net"
           },
-          "endpoint": ""
+          "endpoint": "https://depa-pilot-kv-1873.vault.azure.net"
         }
       }
     },
@@ -51,7 +51,7 @@
           "authority": {
             "endpoint": "sharedneu.neu.attest.azure.net"
           },
-          "endpoint": ""
+          "endpoint": "https://depa-pilot-kv-1873.vault.azure.net"
         }
       }
     }

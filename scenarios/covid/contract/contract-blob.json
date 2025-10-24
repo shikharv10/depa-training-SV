@@ -1,0 +1,56 @@
+{
+  "id": "pilot-contract-covid",
+  "schemaVersion": "0.1",
+  "startTime": "2025-10-21T00:00:00.000Z",
+  "expiryTime": "2026-10-21T00:00:00.000Z",
+  "tdc": "did:web:tdc-pilot.example.com",
+  "tdps": ["did:web:tdp-pilot.example.com"],
+  "ccrp": "did:web:ccrp-pilot.example.com",
+  "datasets": [
+    {
+      "id": "dataset-icmr",
+      "name": "icmr",
+      "url": "https://depapilotstorage2336.blob.core.windows.net/icmrcontainer/data.img",
+      "provider": "did:web:tdp-pilot.example.com",
+      "key": {
+        "type": "azure",
+        "properties": {
+          "kid": "ICMRFilesystemEncryptionKey",
+          "authority": {"endpoint": "sharedneu.neu.attest.azure.net"},
+          "endpoint": "depa-pilot-kv-1873.vault.azure.net"
+        }
+      }
+    },
+    {
+      "id": "dataset-cowin",
+      "name": "cowin",
+      "url": "https://depapilotstorage2336.blob.core.windows.net/cowincontainer/data.img",
+      "provider": "did:web:tdp-pilot.example.com",
+      "key": {
+        "type": "azure",
+        "properties": {
+          "kid": "COWINFilesystemEncryptionKey",
+          "authority": {"endpoint": "sharedneu.neu.attest.azure.net"},
+          "endpoint": "depa-pilot-kv-1873.vault.azure.net"
+        }
+      }
+    },
+    {
+      "id": "dataset-index",
+      "name": "index",
+      "url": "https://depapilotstorage2336.blob.core.windows.net/indexcontainer/data.img",
+      "provider": "did:web:tdp-pilot.example.com",
+      "key": {
+        "type": "azure",
+        "properties": {
+          "kid": "IndexFilesystemEncryptionKey",
+          "authority": {"endpoint": "sharedneu.neu.attest.azure.net"},
+          "endpoint": "depa-pilot-kv-1873.vault.azure.net"
+        }
+      }
+    }
+  ],
+  "purpose": "TRAINING",
+  "constraints": [{"privacy": [{"dataset": "dataset-icmr", "epsilon_threshold": "1.5"}]}],
+  "terms": {"payment": {}, "revocation": {}}
+}

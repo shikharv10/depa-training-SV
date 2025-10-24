@@ -25,8 +25,31 @@ fi
 
 echo Obtaining contract service parameters...
 
-CONTRACT_SERVICE_URL=${CONTRACT_SERVICE_URL:-"https://localhost:8000"}
-export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters | base64 --wrap=0)
+# COMMENTING OUT PREVIOUS CODE
+# CONTRACT_SERVICE_URL=${CONTRACT_SERVICE_URL:-"https://localhost:8000"}
+# export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters | base64 --wrap=0)
+
+# NEW CODE TO SUPPORT CONTRACT STORAGE MODES
+
+CONTRACT_STORAGE_MODE=${CONTRACT_STORAGE_MODE:-"ccf"}
+
+if [ "$CONTRACT_STORAGE_MODE" == "blob" ]; then
+    echo "Using blob storage for contracts..."
+    TRUST_STORE_JSON=$(az storage blob download \
+        --account-name $AZURE_STORAGE_ACCOUNT_NAME \
+        --container-name pilot-contracts \
+        --name trust_store.json \
+        --account-key $AZURE_STORAGE_ACCOUNT_KEY \
+        --query content -o tsv)
+    export CONTRACT_SERVICE_PARAMETERS=$(echo "$TRUST_STORE_JSON" | base64 --wrap=0)
+    export CONTRACT_SERVICE_URL="blob://pilot-contracts"
+else
+    echo "Using CCF contract service..."
+    CONTRACT_SERVICE_URL=${CONTRACT_SERVICE_URL:-"https://localhost:8000"}
+    export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters | base64 --wrap=0)
+fi
+
+# PREVIOUS CODE CONTINUES BELOW
 
 echo Computing CCE policy...
 envsubst < ../../policy/policy-in-template.json > /tmp/policy-in.json
@@ -120,6 +143,10 @@ function generate_encrypted_filesystem_information() {
     jq '.azure_filesystems[4].key_derivation.label = "OutputFilesystemEncryptionKey"' | \
     jq '.azure_filesystems[4].key_derivation.salt = "9b53cddbe5b78a0b912a8f05f341bcd4dd839ea85d26a08efaef13e696d999f4"'`
 
+ TMP=`echo $TMP | \
+    jq '.storage_account_name = env.AZURE_STORAGE_ACCOUNT_NAME' | \
+    jq '.storage_account_key = env.AZURE_STORAGE_ACCOUNT_KEY'`
+  
   ENCRYPTED_FILESYSTEM_INFORMATION=`echo $TMP | base64 --wrap=0`
 }
 
@@ -130,6 +157,10 @@ export ENCRYPTED_FILESYSTEM_INFORMATION
 
 echo Generating parameters for ACI deployment...
 TMP=$(jq '.containerRegistry.value = env.CONTAINER_REGISTRY' aci-parameters-template.json)
+TMP=$(jq '.registryUsername.value = env.AZURE_CONTAINER_REGISTRY_USERNAME' <<< "$TMP")
+TMP=$(jq '.registryPassword.value = env.AZURE_CONTAINER_REGISTRY_PASSWORD' <<< "$TMP")
+TMP=$(jq '.storageAccountName.value = env.AZURE_STORAGE_ACCOUNT_NAME' <<< "$TMP")
+TMP=$(jq '.storageAccountKey.value = env.AZURE_STORAGE_ACCOUNT_KEY' <<< "$TMP")
 TMP=`echo $TMP | jq '.ccePolicy.value = env.CCE_POLICY'`
 TMP=`echo $TMP | jq '.EncfsSideCarArgs.value = env.ENCRYPTED_FILESYSTEM_INFORMATION'`
 TMP=`echo $TMP | jq '.ContractService.value = env.CONTRACT_SERVICE_URL'`

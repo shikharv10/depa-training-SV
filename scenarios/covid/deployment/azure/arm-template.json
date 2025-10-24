@@ -83,6 +83,20 @@
       "metadata": {
         "description": "Pipeline configuration"
       }
+    },
+    "registryUsername": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "registryPassword": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
+    "storageAccountName": {
+      "type": "string"
+    },
+    "storageAccountKey": {
+      "type": "securestring"
     }
   },
   "resources": [
@@ -146,6 +160,14 @@
                 {
                   "name": "PipelineConfiguration",
                   "value": "[parameters('PipelineConfiguration')]"
+                },
+                {
+                  "name": "AZURE_STORAGE_ACCOUNT_NAME",
+                  "value": "[parameters('storageAccountName')]"
+                },
+                {
+                  "name": "AZURE_STORAGE_ACCOUNT_KEY",
+                  "value": "[parameters('storageAccountKey')]"
                 }
               ],
               "volumeMounts": [
@@ -173,6 +195,13 @@
           {
             "name": "remotemounts",
             "emptydir": {}
+          }
+        ],
+        "imageRegistryCredentials": [
+          {
+            "server": "[parameters('containerRegistry')]",
+            "username": "[parameters('registryUsername')]",
+            "password": "[parameters('registryPassword')]"
           }
         ]
       }

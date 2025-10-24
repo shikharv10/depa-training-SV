@@ -6,11 +6,18 @@ RUN python3 -m ensurepip
 # Install encrypted file system binaries
 COPY external/confidential-sidecar-containers/bin/azmount external/confidential-sidecar-containers/bin/remotefs external/confidential-sidecar-containers/bin/get-snp-report /bin/
 COPY src/encfs/encfs.sh /
+
+# NEW SECTION TO FETCH CONTRACT FROM AZURE BLOB STORAGE
+RUN apk add --no-cache bash py3-pip
+COPY scenarios/covid/deployment/azure/fetch_contract_from_blob.py /fetch_contract_from_blob.py
+RUN chmod +x /fetch_contract_from_blob.py
+
 RUN chmod +x /*.sh; date > /made-date
 
 # Install contract ledger client
 COPY external/contract-ledger/pyscitt/dist/pyscitt-0.0.1-py3-none-any.whl .
 RUN pip3 install pyscitt-0.0.1-py3-none-any.whl
+RUN pip3 install azure-storage-blob
 
 # Install OPA and copy policy
 RUN wget -O opa https://github.com/open-policy-agent/opa/releases/download/v0.53.0/opa_linux_amd64_static
