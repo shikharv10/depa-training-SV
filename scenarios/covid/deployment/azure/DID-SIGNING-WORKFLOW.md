@@ -2,122 +2,116 @@
 
 ## Overview
 
-This document describes the complete workflow for generating DID (Decentralized Identifier) credentials, signing contracts, and deploying DEPA Training with Azure Blob Storage for contract management.
+This document describes how to sign contracts with DID (Decentralized Identifier) credentials for both CCF mode and Blob Storage mode.
 
-## Architecture
+## Key Insight
 
-### Components
+**Blob mode reuses existing contract-ledger scripts!** The only difference is the upload destination:
 
-1. **DID Credentials** - Cryptographic identities for all participants:
-   - TDP (Training Data Provider)
-   - TDC (Training Data Consumer)
-   - CCRP (Confidential Clean Room Provider)
+| Mode | Upload Script |
+|------|---------------|
+| CCF Mode | `4-register-contract.sh` (submits to CCF service) |
+| Blob Mode | `4-upload-to-blob.sh` (uploads to blob storage) |
 
-2. **Signed Contracts** - Multi-party signed contracts in COSE format:
-   - Stored in Azure Blob Storage
-   - Verified during deployment
-   - Enforced by policy engine
-
-3. **Trust Store** - Collection of DID documents for signature verification
-
-### Storage Modes
-
-The system supports two contract storage modes:
-
-- **CCF Mode** (default): Contracts stored in Confidential Consortium Framework
-- **Blob Mode**: Contracts stored in Azure Blob Storage with DID signatures
+Everything else (DID generation, contract signing) is **identical**.
 
 ## Prerequisites
 
 - Azure subscription with appropriate permissions
 - Azure CLI installed and configured
 - Python 3.8+ with pip
-- pyscitt CLI installed (done automatically)
+- pyscitt CLI installed
 - Git with submodules initialized
 
-## Step-by-Step Workflow
+## Workflow
 
-### Step 1: Generate DID Credentials
-
-Generate cryptographic identities for all participants:
+### CCF Mode (Production)
 
 ```bash
-cd scenarios/covid/deployment/azure
+cd external/contract-ledger/demo/contract
 
-# Generate DIDs for TDP, TDC, and CCRP
-./1-generate-dids.sh
+# Set environment
+export TDP_USERNAME=your-username
+export CONTRACT_SERVICE_URL=https://your-ccf-service.com:8000
+
+# Generate DID and sign
+./2-create-did.sh
+./3-sign-contract.sh
+
+# Submit to CCF
+./4-register-contract.sh
+
+# Deploy
+cd ../../../../scenarios/covid/deployment/azure
+export CONTRACT_STORAGE_MODE=ccf
+./deploy.sh -c $CONTRACT_SEQ_NO -p ../../config/pipeline_config.json
 ```
 
-**What this does:**
-- Creates EC (Elliptic Curve) keys for each participant
-- Generates DID Web identities (e.g., `did:web:depa-pilot-tdp.github.io`)
-- Creates DID documents with public keys
-- Stores private keys securely in `./did-credentials/`
-- Creates a trust store with all DID documents
+### Blob Mode (Development/Pilots)
+
+```bash
+cd external/contract-ledger/demo/contract
+
+# Set environment
+export TDP_USERNAME=your-username
+export AZURE_STORAGE_ACCOUNT_NAME=your_account
+export AZURE_STORAGE_ACCOUNT_KEY=your_key
+export CONTRACT_VERSION=15  # for contract 2.15
+
+# Generate DID and sign (SAME as CCF mode)
+./2-create-did.sh
+./3-sign-contract.sh
+
+# Upload to blob (DIFFERENT from CCF mode)
+./4-upload-to-blob.sh
+
+# Deploy
+cd ../../../../scenarios/covid/deployment/azure
+export CONTRACT_STORAGE_MODE=blob
+./deploy.sh -c 15 -p ../../config/pipeline_config.json
+```
+
+## What Each Script Does
+
+### 2-create-did.sh (Same for Both Modes)
+
+Creates DID credentials:
+- Generates EC (Elliptic Curve) private key
+- Creates DID Web identity (e.g., `did:web:your-username.github.io`)
+- Saves to `tmp/$TDP_USERNAME/` directory
 
 **Output:**
 ```
-did-credentials/
-├── TDP/
-│   ├── key.pem          # Private key (KEEP SECURE!)
-│   └── did.json         # DID document
-├── TDC/
-│   ├── key.pem
-│   └── did.json
-├── CCRP/
-│   ├── key.pem
-│   └── did.json
-├── trust_store/
-│   ├── tdp-did.json
-│   ├── tdc-did.json
-│   └── ccrp-did.json
-├── did_env.sh           # Environment variables
-└── did_summary.json     # Summary of all DIDs
+tmp/$TDP_USERNAME/
+├── key.pem          # Private key (KEEP SECURE!)
+└── did.json         # DID document (public)
 ```
 
-**Security Note:** The `key.pem` files contain private keys. Never commit these to git or share them insecurely.
+### 3-sign-contract.sh (Same for Both Modes)
 
-### Step 2: Sign and Upload Contract
+Signs the contract:
+- Loads contract from `tmp/contracts/contract.json`
+- Signs with DID private key
+- Creates COSE format signature
+- Saves to `tmp/$TDP_USERNAME/contract.cose`
 
-Create a contract with actual DIDs and sign it with all participants:
+### 4-register-contract.sh (CCF Mode Only)
 
-```bash
-# Set Azure credentials
-export AZURE_STORAGE_ACCOUNT_NAME=depapilotstorage2336
-export AZURE_STORAGE_ACCOUNT_KEY=your_storage_key_here
+Submits to CCF:
+- Connects to CCF service
+- Submits signed contract
+- Receives CCF receipt with Merkle proof
+- Returns contract sequence number
 
-# Optional: customize container and version
-export CONTRACT_CONTAINER_NAME=pilot-contracts
-export CONTRACT_VERSION=2.15
+### 4-upload-to-blob.sh (Blob Mode Only)
 
-# Sign and upload contract
-./2-create-and-sign-contract.sh
-```
+Uploads to blob storage:
+- Connects to Azure Storage
+- Uploads signed contract (COSE)
+- Uploads DID document to trust store
+- Returns blob URL
 
-**What this does:**
-1. Loads the contract template from `../../contract/contract.json`
-2. Injects actual DID identities for TDP, TDC, and CCRP
-3. Substitutes Azure resource references
-4. Signs contract with TDP's private key
-5. Adds TDC's signature
-6. Adds CCRP's signature
-7. Uploads signed contract (COSE format) to Azure Blob Storage
-8. Uploads unsigned JSON for reference
-9. Uploads trust store for verification
-
-**Output in Blob Storage:**
-```
-pilot-contracts/
-├── 2.15.cose            # Signed contract (COSE format)
-├── 2.15.json            # Contract JSON (reference)
-└── trust_store/
-    ├── trust_store.json # Trust store index
-    ├── tdp.json         # TDP DID document
-    ├── tdc.json         # TDC DID document
-    └── ccrp.json        # CCRP DID document
-```
-
-### Step 3: Deploy Training with Blob Mode
+## Contract Structure (Same for Both Modes)
 
 Deploy the DEPA Training clean room with contract verification:
 
