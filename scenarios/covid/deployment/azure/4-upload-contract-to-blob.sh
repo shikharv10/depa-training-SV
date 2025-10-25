@@ -63,6 +63,9 @@ echo "  Storage Account: $AZURE_STORAGE_ACCOUNT_NAME"
 echo "  Container: $CONTRACT_CONTAINER_NAME"
 echo "  Signer: $SIGNER_USERNAME"
 
+# Export variables needed by Python script
+export SIGNER_DIR
+
 # Upload using Python and get sequence number
 SEQUENCE=$(python3 << 'EOF'
 from azure.storage.blob import BlobServiceClient
