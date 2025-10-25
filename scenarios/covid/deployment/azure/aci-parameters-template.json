@@ -22,5 +22,11 @@
   },
   "ContractStorageMode": {
     "value": ""
+  },
+  "registryUsername": {
+    "value": ""
+  },
+  "registryPassword": {
+    "value": ""
   }
 }

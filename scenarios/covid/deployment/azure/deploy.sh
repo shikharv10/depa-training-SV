@@ -162,6 +162,8 @@ TMP=`echo $TMP | jq '.ContractServiceParameters.value = env.CONTRACT_SERVICE_PAR
 TMP=`echo $TMP | jq '.Contracts.value = env.CONTRACTS'`
 TMP=`echo $TMP | jq '.PipelineConfiguration.value = env.PIPELINE_CONFIGURATION'`
 TMP=`echo $TMP | jq '.ContractStorageMode.value = env.CONTRACT_STORAGE_MODE'`
+TMP=`echo $TMP | jq '.registryUsername.value = env.AZURE_CONTAINER_REGISTRY_USERNAME'`
+TMP=`echo $TMP | jq '.registryPassword.value = env.AZURE_CONTAINER_REGISTRY_PASSWORD'`
 echo $TMP > /tmp/aci-parameters.json
 
 echo Deploying training clean room...

@@ -90,6 +90,20 @@
       "metadata": {
         "description": "Contract storage mode: ccf or blob"
       }
+    },
+    "registryUsername": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "Container registry username"
+      }
+    },
+    "registryPassword": {
+      "defaultValue": "",
+      "type": "secureString",
+      "metadata": {
+        "description": "Container registry password"
+      }
     }
   },
   "resources": [
@@ -175,6 +189,13 @@
                 }
               }
             }
+          }
+        ],
+        "imageRegistryCredentials": [
+          {
+            "server": "[parameters('containerRegistry')]",
+            "username": "[parameters('registryUsername')]",
+            "password": "[parameters('registryPassword')]"
           }
         ],
         "sku": "Confidential",
