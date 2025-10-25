@@ -33,22 +33,22 @@ az account show
 
 ```bash
 # Azure subscription and resources
-export AZURE_SUBSCRIPTION_ID="your-subscription-id"
-export AZURE_RESOURCE_GROUP="depa-pilots"
-export AZURE_LOCATION="eastus"
+export AZURE_SUBSCRIPTION_ID="<your-subscription-id>"
+export AZURE_RESOURCE_GROUP="<your-resource-group>"
+export AZURE_LOCATION="<your-location>"
 
 # Azure Storage (for contracts)
-export AZURE_STORAGE_ACCOUNT_NAME="depapilotstorage2336"
-export AZURE_STORAGE_ACCOUNT_KEY="your-storage-key"
+export AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account-name>"
+export AZURE_STORAGE_ACCOUNT_KEY="<your-storage-key>"
 
 # Azure Key Vault (for encryption keys)
-export AZURE_KEY_VAULT_NAME="depa-pilot-kv-1873"
-export AZURE_KEYVAULT_ENDPOINT="https://depa-pilot-kv-1873.vault.azure.net"
+export AZURE_KEY_VAULT_NAME="<your-key-vault-name>"
+export AZURE_KEYVAULT_ENDPOINT="https://<your-key-vault-name>.vault.azure.net"
 
 # Container Registry
-export CONTAINER_REGISTRY="depapilotacr.azurecr.io"
-export AZURE_CONTAINER_REGISTRY_USERNAME="depapilotacr"
-export AZURE_CONTAINER_REGISTRY_PASSWORD="your-acr-password"
+export CONTAINER_REGISTRY="<your-container-registry>.azurecr.io"
+export AZURE_CONTAINER_REGISTRY_USERNAME="<your-registry-username>"
+export AZURE_CONTAINER_REGISTRY_PASSWORD="<your-registry-password>"
 
 # Storage container names
 export AZURE_ICMR_CONTAINER_NAME="icmrcontainer"
@@ -59,33 +59,34 @@ export AZURE_OUTPUT_CONTAINER_NAME="outputcontainer"
 
 # Blob mode specific
 export CONTRACT_STORAGE_MODE="blob"
-export CONTRACT_VERSION="15"  # For contract 2.15
+export CONTRACT_VERSION="<contract-version>"
 export CONTRACT_CONTAINER_NAME="pilot-contracts"
 
-# Save to file for future use
+# Optional: Save to file for reuse
 cat > ~/depa-env.sh << 'EOF'
-export AZURE_SUBSCRIPTION_ID="your-subscription-id"
-export AZURE_RESOURCE_GROUP="depa-pilots"
-export AZURE_LOCATION="eastus"
-export AZURE_STORAGE_ACCOUNT_NAME="depapilotstorage2336"
-export AZURE_STORAGE_ACCOUNT_KEY="your-storage-key"
-export AZURE_KEY_VAULT_NAME="depa-pilot-kv-1873"
-export AZURE_KEYVAULT_ENDPOINT="https://depa-pilot-kv-1873.vault.azure.net"
-export CONTAINER_REGISTRY="depapilotacr.azurecr.io"
-export AZURE_CONTAINER_REGISTRY_USERNAME="depapilotacr"
-export AZURE_CONTAINER_REGISTRY_PASSWORD="your-acr-password"
+export AZURE_SUBSCRIPTION_ID="<your-subscription-id>"
+export AZURE_RESOURCE_GROUP="<your-resource-group>"
+export AZURE_LOCATION="<your-location>"
+export AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account-name>"
+export AZURE_STORAGE_ACCOUNT_KEY="<your-storage-key>"
+export AZURE_KEY_VAULT_NAME="<your-key-vault-name>"
+export AZURE_KEYVAULT_ENDPOINT="https://<your-key-vault-name>.vault.azure.net"
+export CONTAINER_REGISTRY="<your-container-registry>.azurecr.io"
+export AZURE_CONTAINER_REGISTRY_USERNAME="<your-registry-username>"
+export AZURE_CONTAINER_REGISTRY_PASSWORD="<your-registry-password>"
 export AZURE_ICMR_CONTAINER_NAME="icmrcontainer"
 export AZURE_COWIN_CONTAINER_NAME="cowincontainer"
 export AZURE_INDEX_CONTAINER_NAME="indexcontainer"
 export AZURE_MODEL_CONTAINER_NAME="modelcontainer"
 export AZURE_OUTPUT_CONTAINER_NAME="outputcontainer"
 export CONTRACT_STORAGE_MODE="blob"
-export CONTRACT_VERSION="15"
+export CONTRACT_VERSION="<contract-version>"
 export CONTRACT_CONTAINER_NAME="pilot-contracts"
 EOF
 
 # Load it
 source ~/depa-env.sh
+
 ```
 
 ### Step 2: Install pyscitt CLI
