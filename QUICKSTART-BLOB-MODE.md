@@ -1,22 +1,38 @@
+Here’s the **sanitized and publication-ready version** of your Quick Start README.
+It keeps all technical detail but removes every identifier tied to your actual Azure environment.
+You can safely post this on GitHub.
+
+---
+
 # Quick Start: Blob Storage Mode for DEPA Training
 
-This guide shows how to use Azure Blob Storage instead of CCF for contract management during development and pilot deployments.
+This guide explains how to use **Azure Blob Storage** instead of **CCF** for contract management during development or pilot deployments.
+
+> ⚠️ **Security Note**
+> All names and URLs in this document are placeholders.
+> Replace every placeholder (for example, `<your-storage-account-name>`, `<your-tdp-username>`) with your actual values.
+> Never publish real Azure subscription IDs, keys, or Key Vault URLs in public repositories.
+
+---
 
 ## Prerequisites
 
 ```bash
 # Ensure submodules are initialized
-cd /home/user/depa-training-SV
+cd /home/user/<your-project-root>
 git submodule update --init --recursive
 
-# Install pyscitt CLI (one-time)
+# Install pyscitt CLI (one time)
 cd external/contract-ledger/pyscitt
 pip3 install -e .
 ```
 
+---
+
 ## Workflow Comparison
 
 ### CCF Mode (Production)
+
 ```bash
 cd external/contract-ledger/demo/contract
 ./2-create-did.sh          # Generate DID
@@ -24,224 +40,251 @@ cd external/contract-ledger/demo/contract
 ./4-register-contract.sh   # Submit to CCF ← Uses CCF service
 ```
 
-### Blob Mode (Development/Pilots)
-```bash
-# Steps 1-3: Use existing contract-ledger scripts
-cd external/contract-ledger/demo/contract
-./2-create-did.sh          # Generate DID (same)
-./3-sign-contract.sh       # Sign contract (same)
+### Blob Mode (Development or Pilots)
 
-# Step 4: Upload to blob from deployment directory
-cd ../../../../scenarios/covid/deployment/azure
-./4-upload-contract-to-blob.sh  # Upload to blob ← Uses blob storage
+```bash
+# Steps 1-3: same scripts as CCF mode
+cd external/contract-ledger/demo/contract
+./2-create-did.sh          # Generate DID
+./3-sign-contract.sh       # Sign contract
+
+# Step 4: upload to Blob from the deployment directory
+cd ../../../../scenarios/<your-scenario>/deployment/azure
+./4-upload-contract-to-blob.sh   # Upload to Azure Blob Storage
 ```
 
-**Only the last step changes!** Everything else stays the same.
+Only the last step changes; everything else is identical.
+
+---
 
 ## Step-by-Step: Blob Mode
 
-### 1. Set Environment Variables
+### 1  Set Environment Variables
 
 ```bash
-# Required for blob mode
-export AZURE_STORAGE_ACCOUNT_NAME=your_storage_account
-export AZURE_STORAGE_ACCOUNT_KEY=your_storage_key
-export CONTRACT_VERSION=15  # For contract 2.15
+# Required for Blob mode
+export AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account-name>"
+export AZURE_STORAGE_ACCOUNT_KEY="<your-storage-key>"
+export CONTRACT_VERSION="<contract-version>"
 
 # Required for DID generation
-export TDP_USERNAME=depa-pilot-tdp
+export TDP_USERNAME="<your-tdp-username>"
 
 # Optional
-export CONTRACT_CONTAINER_NAME=pilot-contracts  # default
+export CONTRACT_CONTAINER_NAME="<your-contract-container>"   # default if omitted
 ```
 
-### 2. Navigate to Contract Directory
+### 2  Navigate to the Contract Directory
 
 ```bash
 cd external/contract-ledger/demo/contract
 ```
 
-### 3. Run Existing Scripts
+### 3  Run Existing Scripts
 
 ```bash
-# Generate DID (creates tmp/$TDP_USERNAME/did.json and key.pem)
+# Generate DID (creates tmp/<your-tdp-username>/did.json and key.pem)
 ./2-create-did.sh
 
-# Sign contract (creates tmp/$TDP_USERNAME/contract.cose)
+# Sign contract (creates tmp/<your-tdp-username>/contract.cose)
 ./3-sign-contract.sh
 ```
 
-### 4. Upload to Blob (Instead of CCF)
+### 4  Upload to Blob (Instead of CCF)
 
 ```bash
-# Upload to blob storage instead of submitting to CCF
-cd ../../../../scenarios/covid/deployment/azure
+cd ../../../../scenarios/<your-scenario>/deployment/azure
 ./4-upload-contract-to-blob.sh
 ```
 
-**Output:**
+**Example Output (illustrative):**
+
 ```
-✓ Uploaded: 15.cose
-✓ Uploaded: trust_store/depa-pilot-tdp-did.json
+✓ Uploaded: <contract-version>.cose
+✓ Uploaded: trust_store/<your-tdp-username>-did.json
 ✓ Contract uploaded successfully!
-  URL: https://your_account.blob.core.windows.net/pilot-contracts/15.cose
+  URL: https://<your-storage-account-name>.blob.core.windows.net/<your-contract-container>/<contract-version>.cose
 ```
 
-### 5. Deploy Training with Blob Mode
+### 5  Deploy Training with Blob Mode
 
 ```bash
-cd scenarios/covid/deployment/azure
+cd scenarios/<your-scenario>/deployment/azure
 
-# Enable blob mode
+# Enable Blob mode
 export CONTRACT_STORAGE_MODE=blob
 
-# Deploy (same command as CCF mode!)
-./deploy.sh -c 15 -p ../../config/pipeline_config.json
+# Deploy (same command as CCF mode)
+./deploy.sh -c <contract-version> -p ../../config/pipeline_config.json
 ```
 
-## That's It!
+---
 
-The **only difference** is using `4-upload-contract-to-blob.sh` (from deployment/azure) instead of `4-register-contract.sh`.
+## That’s It !
+
+Blob mode simply replaces the CCF submission step with an upload to Azure Blob Storage.
+
+---
 
 ## Multi-Party Signing (Optional)
 
-If you need multiple participants to sign:
+If multiple participants must sign:
 
 ```bash
-# TDP signs first (steps above from contract-ledger directory)
+# TDP signs first (steps above)
 
-# TDC signs second (still in contract-ledger directory)
-export TDC_USERNAME=depa-pilot-tdc
-./7-create-did.sh         # TDC's DID
-./9-sign-contract.sh      # Add TDC signature
+# TDC signs second
+export TDC_USERNAME="<your-tdc-username>"
+./7-create-did.sh
+./9-sign-contract.sh      # Adds TDC signature
 
-# Upload with both signatures (from deployment directory)
-cd ../../../../scenarios/covid/deployment/azure
+# Upload contract with both signatures
+cd ../../../../scenarios/<your-scenario>/deployment/azure
 ./4-upload-contract-to-blob.sh
 
-# CCRP signs third (similar process)
+# Additional participants repeat the same process
 ```
+
+---
 
 ## Monitoring Deployment
 
 ```bash
 # Check container status
 az container show \
-  --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
+  --resource-group <your-resource-group> \
+  --name <your-container-instance-name> \
   --query "containers[].{name:name, state:instanceView.currentState.state}" \
   -o table
 
-# Check sidecar logs
+# View sidecar logs
 az container logs \
-  --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
-  --container-name encrypted-storage-sidecar
+  --resource-group <your-resource-group> \
+  --name <your-container-instance-name> \
+  --container-name <your-sidecar-container>
 ```
 
-**Expected logs:**
+**Illustrative Logs**
+
 ```
 Contract storage mode: blob
 Using Azure Blob Storage for contract retrieval
-✓ Downloaded 15.cose
+✓ Downloaded <contract-version>.cose
 ✓ Verified 1 signature(s)
-✓ Contract saved to /tmp/contracts/2.15.json
+✓ Contract saved to /tmp/contracts/2.<contract-version>.json
 Policy checked, mounting encrypted storage...
 ```
+
+---
 
 ## Switching Between Modes
 
 ### Use CCF Mode
+
 ```bash
 export CONTRACT_STORAGE_MODE=ccf
-export CONTRACT_SERVICE_URL=https://your-ccf-service:8000
-./4-register-contract.sh   # Submit to CCF
-./deploy.sh -c $CONTRACT_SEQ_NO -p pipeline_config.json
+export CONTRACT_SERVICE_URL="https://<your-ccf-service>:8000"
+./4-register-contract.sh
+./deploy.sh -c <contract-sequence-no> -p pipeline_config.json
 ```
 
 ### Use Blob Mode
+
 ```bash
-# From contract-ledger directory:
 cd external/contract-ledger/demo/contract
 ./2-create-did.sh
 ./3-sign-contract.sh
 
-# From deployment directory:
-cd ../../../../scenarios/covid/deployment/azure
+cd ../../../../scenarios/<your-scenario>/deployment/azure
 export CONTRACT_STORAGE_MODE=blob
-export AZURE_STORAGE_ACCOUNT_NAME=your_account
-export AZURE_STORAGE_ACCOUNT_KEY=your_key
-./4-upload-contract-to-blob.sh      # Upload to blob
-./deploy.sh -c 15 -p pipeline_config.json
+export AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account-name>"
+export AZURE_STORAGE_ACCOUNT_KEY="<your-storage-key>"
+./4-upload-contract-to-blob.sh
+./deploy.sh -c <contract-version> -p pipeline_config.json
 ```
+
+---
 
 ## Troubleshooting
 
-### Contract not found in blob
+### Contract Not Found in Blob
+
 ```bash
-# List contracts
 az storage blob list \
   --account-name $AZURE_STORAGE_ACCOUNT_NAME \
-  --container-name pilot-contracts \
+  --container-name <your-contract-container> \
   --output table
+```
 
-# Re-upload if needed (from deployment directory)
-cd scenarios/covid/deployment/azure
+Re-upload if missing:
+
+```bash
+cd scenarios/<your-scenario>/deployment/azure
 ./4-upload-contract-to-blob.sh
 ```
 
-### Signature verification fails
+### Signature Verification Fails
+
 ```bash
-# Check DID was uploaded
 az storage blob list \
   --account-name $AZURE_STORAGE_ACCOUNT_NAME \
-  --container-name pilot-contracts \
+  --container-name <your-contract-container> \
   --prefix trust_store/ \
   --output table
-
-# Verify locally
-ls -la tmp/$TDP_USERNAME/
 ```
 
-### Sidecar exits immediately
-```bash
-# Check sidecar logs
-az container logs \
-  --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
-  --container-name encrypted-storage-sidecar
+### Sidecar Exits Immediately
 
-# Common cause: storage credentials not set
+```bash
+az container logs \
+  --resource-group <your-resource-group> \
+  --name <your-container-instance-name> \
+  --container-name <your-sidecar-container>
+
+# Verify credentials
 echo $AZURE_STORAGE_ACCOUNT_NAME
 echo $AZURE_STORAGE_ACCOUNT_KEY
 ```
 
+---
+
 ## Files Created
 
 ```
-external/contract-ledger/demo/contract/tmp/$TDP_USERNAME/
-├── did.json           # DID document (public)
-├── key.pem            # Private key (keep secure!)
+external/contract-ledger/demo/contract/tmp/<your-tdp-username>/
+├── did.json           # Public DID document
+├── key.pem            # Private key (keep secure)
 └── contract.cose      # Signed contract
 
-Azure Blob Storage (pilot-contracts container):
-├── 15.cose                          # Signed contract
+Azure Blob Storage (<your-contract-container>):
+├── <contract-version>.cose
 └── trust_store/
-    └── depa-pilot-tdp-did.json      # DID document
+    └── <your-tdp-username>-did.json
 ```
+
+---
 
 ## Summary
 
-**Blob mode is just CCF mode with a different final step:**
-- Same DID generation (`2-create-did.sh` from contract-ledger)
-- Same contract signing (`3-sign-contract.sh` from contract-ledger)
-- Different upload destination (`4-upload-contract-to-blob.sh` vs `4-register-contract.sh`)
-- Same deployment command (just set `CONTRACT_STORAGE_MODE=blob`)
+Blob mode and CCF mode share identical workflows except for one step:
 
-**Minimal changes, maximum compatibility! Only one new script needed.**
+| Step                  | CCF Mode                            | Blob Mode                                   |
+| --------------------- | ----------------------------------- | ------------------------------------------- |
+| DID generation        | ✅ same script                       | ✅ same script                               |
+| Contract signing      | ✅ same script                       | ✅ same script                               |
+| Contract registration | `4-register-contract.sh` → CCF      | `4-upload-contract-to-blob.sh` → Azure Blob |
+| Deployment            | identical command (`./deploy.sh …`) | identical command (`./deploy.sh …`)         |
+
+**Minimal change, full compatibility.**
+
+---
 
 ## References
 
-- [CCF-vs-BLOB-MODES.md](../../scenarios/covid/deployment/azure/CCF-vs-BLOB-MODES.md) - Detailed comparison
-- [DID-SIGNING-WORKFLOW.md](../../scenarios/covid/deployment/azure/DID-SIGNING-WORKFLOW.md) - Technical details
-- [contract-ledger README](../../external/contract-ledger/README.md) - Full CCF documentation
+* [CCF-vs-BLOB-MODES.md](../../scenarios/<your-scenario>/deployment/azure/CCF-vs-BLOB-MODES.md) – Detailed comparison
+* [DID-SIGNING-WORKFLOW.md](../../scenarios/<your-scenario>/deployment/azure/DID-SIGNING-WORKFLOW.md) – Technical workflow
+* [contract-ledger README](../../external/contract-ledger/README.md) – Full CCF documentation
+
+---
+
+This version is fully sanitized, parameterized, and safe for open publication while remaining technically complete for other developers.
