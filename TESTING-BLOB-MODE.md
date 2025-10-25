@@ -109,7 +109,7 @@ scitt --help
 cd ~/depa-training-SV/external/contract-ledger/demo/contract
 
 # Set TDP username
-export TDP_USERNAME="depa-pilot-tdp"
+export TDP_USERNAME="<your-tdp-username>"
 
 # Generate DID
 ./2-create-did.sh
@@ -126,7 +126,7 @@ cat tmp/$TDP_USERNAME/did.json | jq '.'
 ```json
 {
   "@context": [...],
-  "id": "did:web:depa-pilot-tdp.github.io",
+  "id": "did:web:<your-tdp-username>.github.io",
   "assertionMethod": [...]
 }
 ```
@@ -175,14 +175,14 @@ cd ~/depa-training-SV/scenarios/covid/deployment/azure
 **Expected Output:**
 ```
 Uploading signed contract to Azure Blob Storage...
-  Storage Account: depapilotstorage2336
+  Storage Account: <your-storage-account-name>
   Container: pilot-contracts
   Version: 15
 ✓ Created container: pilot-contracts
 ✓ Uploaded: 15.cose
-✓ Uploaded: trust_store/depa-pilot-tdp-did.json
+✓ Uploaded: trust_store/<your-tdp-username>-did.json
 ✓ Contract uploaded successfully!
-  URL: https://depapilotstorage2336.blob.core.windows.net/pilot-contracts/15.cose
+  URL: https://<your-storage-account-name>.blob.core.windows.net/pilot-contracts/15.cose
 ```
 
 ### Step 7: Verify Upload
@@ -198,7 +198,7 @@ az storage blob list \
 # Name                            Blob Type    Length
 # ------------------------------  -----------  --------
 # 15.cose                         BlockBlob    <size>
-# trust_store/depa-pilot-tdp-did.json  BlockBlob    <size>
+# trust_store/<your-tdp-username>-did.json  BlockBlob    <size>
 ```
 
 ## Phase 3: Build and Push Containers
@@ -222,10 +222,10 @@ cd scenarios/covid
 
 ```bash
 # Login to ACR
-az acr login --name depapilotacr
+az acr login --name <your-container-registry-name>
 
 # Or using docker
-docker login depapilotacr.azurecr.io \
+docker login <your-container-registry-name>.azurecr.io \
   -u $AZURE_CONTAINER_REGISTRY_USERNAME \
   -p $AZURE_CONTAINER_REGISTRY_PASSWORD
 
@@ -239,8 +239,8 @@ cd scenarios/covid
 
 **Expected Output:**
 ```
-Pushing depapilotacr.azurecr.io/depa-training:latest
-Pushing depapilotacr.azurecr.io/depa-training-encfs:latest
+Pushing <your-container-registry-name>.azurecr.io/depa-training:latest
+Pushing <your-container-registry-name>.azurecr.io/depa-training-encfs:latest
 ...
 ```
 
@@ -300,7 +300,7 @@ Deploying training clean room...
 # Check container status
 az container show \
   --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
+  --name <your-container-instance-name> \
   --query "containers[].{name:name, state:instanceView.currentState.state, exitCode:instanceView.currentState.exitCode}" \
   -o table
 
@@ -317,7 +317,7 @@ az container show \
 # View sidecar logs
 az container logs \
   --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
+  --name <your-container-instance-name> \
   --container-name encrypted-storage-sidecar
 ```
 
@@ -326,12 +326,12 @@ az container logs \
 EncfsSideCarArgs = <base64-data>
 Contract storage mode: blob
 Using Azure Blob Storage for contract retrieval
-Storage Account: depapilotstorage2336
+Storage Account: <your-storage-account-name>
 Container: pilot-contracts
 Contract Version: 15
 Fetching signed contract from blob storage...
 INFO: Fetching Signed Contract from Azure Blob Storage
-INFO: Storage Account: depapilotstorage2336
+INFO: Storage Account: <your-storage-account-name>
 INFO: Container: pilot-contracts
 INFO: Contract Version: 15
 INFO: Downloading 15.cose from container pilot-contracts...
@@ -341,7 +341,7 @@ INFO: ✓ Downloaded to /tmp/contract_fetch/trust_store/trust_store.json
 INFO: Loading signed contract from /tmp/contract_fetch/15.cose...
 INFO: ✓ Loaded COSE message with 1 signature(s)
 INFO: Verifying signatures...
-INFO:   Signature 1: did:web:depa-pilot-tdp.github.io
+INFO:   Signature 1: did:web:<your-tdp-username>.github.io
 INFO: ✓ Verified 1 signature(s)
 INFO: Extracting contract JSON...
 INFO: ✓ Contract saved to /tmp/contracts/2.15.json
@@ -371,13 +371,13 @@ cat /tmp/encrypted-filesystem-config.json | base64 -d | jq '.'
 # View training container logs
 az container logs \
   --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
+  --name <your-container-instance-name> \
   --container-name depa-training
 
 # Follow logs in real-time
 az container logs \
   --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
+  --name <your-container-instance-name> \
   --container-name depa-training \
   --follow
 ```
@@ -404,7 +404,7 @@ CCR Training complete!
 # Check final container state
 az container show \
   --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
+  --name <your-container-instance-name> \
   --query "containers[].{name:name, state:instanceView.currentState.state, exitCode:instanceView.currentState.exitCode, finishTime:instanceView.currentState.finishTime}" \
   -o table
 
@@ -420,7 +420,7 @@ To verify blob mode works equivalently to CCF mode:
 ```bash
 # Switch to CCF mode
 export CONTRACT_STORAGE_MODE=ccf
-export CONTRACT_SERVICE_URL=https://depa-training-contract-service.centralindia.cloudapp.azure.com:8000
+export CONTRACT_SERVICE_URL=https://<your-contract-service-url>
 
 # You would need to:
 # 1. Run contract-ledger scripts with CCF submission (4-register-contract.sh)
@@ -436,14 +436,14 @@ export CONTRACT_SERVICE_URL=https://depa-training-contract-service.centralindia.
 # Check exit code
 az container show \
   --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
+  --name <your-container-instance-name> \
   --query "containers[?name=='encrypted-storage-sidecar'].instanceView.currentState" \
   -o json
 
 # Check logs for error
 az container logs \
   --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
+  --name <your-container-instance-name> \
   --container-name encrypted-storage-sidecar | tail -50
 ```
 
@@ -507,7 +507,7 @@ python3 setup.py sdist bdist_wheel
 # Delete container instance
 az container delete \
   --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
+  --name <your-container-instance-name> \
   --yes
 
 # Keep storage and containers for next test
@@ -563,7 +563,7 @@ sleep 30
 echo "4. Checking status..."
 az container show \
   --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
+  --name <your-container-instance-name> \
   --query "containers[].{name:name, state:instanceView.currentState.state}" \
   -o table
 
@@ -571,7 +571,7 @@ az container show \
 echo "5. Sidecar logs:"
 az container logs \
   --resource-group $AZURE_RESOURCE_GROUP \
-  --name depa-training-covid \
+  --name <your-container-instance-name> \
   --container-name encrypted-storage-sidecar | tail -50
 
 echo "=== Test Complete ==="
