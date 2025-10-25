@@ -164,6 +164,52 @@ def extract_contract_fallback(cose_file, output_json):
         logger.error(f"Fallback extraction also failed: {e}")
         return False
 
+def download_all_trust_store_dids(storage_account, storage_key, container_name, trust_store_dir):
+    """Download all DID documents from trust_store/ prefix"""
+    try:
+        from azure.storage.blob import BlobServiceClient
+
+        connection_string = (
+            f"DefaultEndpointsProtocol=https;"
+            f"AccountName={storage_account};"
+            f"AccountKey={storage_key};"
+            f"EndpointSuffix=core.windows.net"
+        )
+
+        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        container_client = blob_service_client.get_container_client(container_name)
+
+        logger.info("Downloading trust store DIDs...")
+
+        # List all blobs with trust_store/ prefix
+        blob_list = container_client.list_blobs(name_starts_with="trust_store/")
+
+        did_count = 0
+        for blob in blob_list:
+            if blob.name.endswith("-did.json") or blob.name.endswith("did.json"):
+                # Download to trust store directory
+                filename = Path(blob.name).name
+                output_path = trust_store_dir / filename
+
+                blob_client = container_client.get_blob_client(blob.name)
+                with open(output_path, "wb") as f:
+                    download_stream = blob_client.download_blob()
+                    f.write(download_stream.readall())
+
+                logger.info(f"  ✓ Downloaded: {blob.name}")
+                did_count += 1
+
+        if did_count == 0:
+            logger.warning("No DID documents found in trust store!")
+        else:
+            logger.info(f"✓ Downloaded {did_count} DID document(s)")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"Failed to download trust store: {e}")
+        return False
+
 def main():
     """Main entry point"""
 
@@ -171,53 +217,53 @@ def main():
     storage_account = os.environ.get("AZURE_STORAGE_ACCOUNT_NAME")
     storage_key = os.environ.get("AZURE_STORAGE_ACCOUNT_KEY")
     container_name = os.environ.get("CONTRACT_CONTAINER_NAME", "pilot-contracts")
-    contract_version = os.environ.get("CONTRACT_VERSION", "2.15")
+    contract_version = os.environ.get("CONTRACT_VERSION", "15")
 
     if not storage_account or not storage_key:
         logger.error("AZURE_STORAGE_ACCOUNT_NAME and AZURE_STORAGE_ACCOUNT_KEY must be set")
         sys.exit(1)
+
+    # Extract sequence number from contract version
+    # Handles both "15" and "2.15" formats
+    if "." in contract_version:
+        sequence = contract_version.split(".")[-1]
+    else:
+        sequence = contract_version
 
     logger.info("=" * 60)
     logger.info("Fetching Signed Contract from Azure Blob Storage")
     logger.info("=" * 60)
     logger.info(f"Storage Account: {storage_account}")
     logger.info(f"Container: {container_name}")
-    logger.info(f"Contract Version: {contract_version}")
+    logger.info(f"Contract Sequence: {sequence}")
     logger.info("")
 
     # Create temporary directory
     tmp_dir = Path("/tmp/contract_fetch")
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
-    # Download signed contract (COSE)
-    cose_file = tmp_dir / f"{contract_version}.cose"
+    # Download signed contract (COSE) using sequence number
+    cose_file = tmp_dir / f"{sequence}.cose"
     if not download_from_blob(
         storage_account, storage_key, container_name,
-        f"{contract_version}.cose", cose_file
+        f"{sequence}.cose", cose_file
     ):
-        logger.error("Failed to download signed contract")
+        logger.error(f"Failed to download signed contract {sequence}.cose")
         sys.exit(1)
 
     # Download trust store
     trust_store_dir = tmp_dir / "trust_store"
     trust_store_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Downloading trust store...")
-    trust_store_files = ["trust_store.json", "tdp.json", "tdc.json", "ccrp.json"]
-    for ts_file in trust_store_files:
-        ts_path = trust_store_dir / ts_file
-        if not download_from_blob(
-            storage_account, storage_key, container_name,
-            f"trust_store/{ts_file}", ts_path
-        ):
-            logger.warning(f"Failed to download {ts_file} (continuing anyway)")
+    if not download_all_trust_store_dids(storage_account, storage_key, container_name, trust_store_dir):
+        logger.warning("Failed to download complete trust store (continuing anyway)")
 
     # Create output directory
     output_dir = Path("/tmp/contracts")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Verify and extract contract
-    output_json = output_dir / f"2.{contract_version}.json"
+    # Verify and extract contract - output in CCF-compatible format (2.<sequence>.json)
+    output_json = output_dir / f"2.{sequence}.json"
     if not verify_and_extract_contract(cose_file, trust_store_dir, output_json):
         logger.error("Failed to verify and extract contract")
         sys.exit(1)
