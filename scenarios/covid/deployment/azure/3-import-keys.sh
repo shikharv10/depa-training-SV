@@ -26,10 +26,23 @@ function import_key() {
 }
 
 echo Obtaining contract service parameters...
-CONTRACT_SERVICE_URL=${CONTRACT_SERVICE_URL:-"http://localhost:8000"}
-export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters | base64 --wrap=0)
+
+# Support both CCF and blob storage modes
+CONTRACT_STORAGE_MODE=${CONTRACT_STORAGE_MODE:-"ccf"}
+echo "Contract storage mode: $CONTRACT_STORAGE_MODE"
+
+if [ "$CONTRACT_STORAGE_MODE" = "blob" ]; then
+  echo "Using blob storage mode - skipping CCF service check"
+  # For blob mode, we don't need CCF service parameters
+  export CONTRACT_SERVICE_PARAMETERS=""
+else
+  echo "Using CCF mode - obtaining service parameters"
+  CONTRACT_SERVICE_URL=${CONTRACT_SERVICE_URL:-"http://localhost:8000"}
+  export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters | base64 --wrap=0)
+fi
 
 envsubst < ../../policy/policy-in-template.json > /tmp/policy-in.json
+
 export CCE_POLICY=$(az confcom acipolicygen -i /tmp/policy-in.json --debug-mode)
 export CCE_POLICY_HASH=$(go run $TOOLS_HOME/securitypolicydigest/main.go -p $CCE_POLICY)
 echo "Training container policy hash $CCE_POLICY_HASH"

@@ -44,6 +44,11 @@
           "value": ".+",
           "strategy": "re2"
         }
+        {
+          "name": "CONTRACT_STORAGE_MODE",
+          "value": "(ccf|blob)",
+          "strategy": "re2"
+        }
       ],
       "command": [
         "/encfs.sh"
