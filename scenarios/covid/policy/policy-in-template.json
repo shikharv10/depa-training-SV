@@ -43,7 +43,7 @@
           "name": "PipelineConfiguration",
           "value": ".+",
           "strategy": "re2"
-        }
+        },
         {
           "name": "CONTRACT_STORAGE_MODE",
           "value": "(ccf|blob)",
