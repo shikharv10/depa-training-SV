@@ -1,6 +1,6 @@
 FROM alpine:3.17.1
 
-RUN apk update && apk add cryptsetup fuse curl python3 git jq
+RUN apk update && apk add bash cryptsetup fuse curl python3 git jq
 RUN python3 -m ensurepip
 
 # Install encrypted file system binaries
