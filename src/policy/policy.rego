@@ -13,8 +13,10 @@ all_datasets_in_contract_included if {
 	every dataset in data.datasets {
 		some filesystem in input.azure_filesystems
 
-		# key management service match
-		dataset.key.properties.endpoint == filesystem.key.akv.endpoint
+		# key management service match (strip https:// prefix if present)
+		contract_endpoint := trim_prefix(dataset.key.properties.endpoint, "https://")
+		config_endpoint := trim_prefix(filesystem.key.akv.endpoint, "https://")
+		contract_endpoint == config_endpoint
 
 		# key identifiers match
 		dataset.key.properties.kid == filesystem.key.kid
