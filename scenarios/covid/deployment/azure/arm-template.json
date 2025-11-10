@@ -83,6 +83,22 @@
       "metadata": {
         "description": "Pipeline configuration"
       }
+    },
+    "PyscittBackend": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "PyscittBlobAccount": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "PyscittBlobKey": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "PyscittBlobContainer": {
+      "type": "string",
+      "defaultValue": "contracts"
     }
   },
   "resources": [
@@ -146,6 +162,22 @@
                 {
                   "name": "PipelineConfiguration",
                   "value": "[parameters('PipelineConfiguration')]"
+                },
+                {
+                  "name": "PYSCITT_BACKEND",
+                  "value": "[parameters(\"PyscittBackend\")]"
+                },
+                {
+                  "name": "PYSCITT_BLOB_ACCOUNT",
+                  "value": "[parameters(\"PyscittBlobAccount\")]"
+                },
+                {
+                  "name": "PYSCITT_BLOB_KEY",
+                  "value": "[parameters(\"PyscittBlobKey\")]"
+                },
+                {
+                  "name": "PYSCITT_BLOB_CONTAINER",
+                  "value": "[parameters(\"PyscittBlobContainer\")]"
                 }
               ],
               "volumeMounts": [

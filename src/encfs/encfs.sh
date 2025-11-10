@@ -1,18 +1,17 @@
 #!/bin/sh
+set -e
 
-set -e 
-
-if [[ -z "${Contracts}" ]]; then 
+if [[ -z "${Contracts}" ]]; then
   echo "Contract not specified"
   exit 1
 fi
 
-if [[ -z "${ContractServiceParameters}" ]]; then 
+if [[ -z "${ContractServiceParameters}" ]]; then
   echo "Contract service parameters not specified"
   exit 1
 fi
 
-if [[ -z "${ContractService}" ]]; then 
+if [[ -z "${ContractService}" ]]; then
   echo "Contract service not specified"
   exit 1
 fi
@@ -33,6 +32,17 @@ TRUST_STORE=/tmp/trust_store
 mkdir -p $TRUST_STORE
 echo $ContractServiceParameters | base64 -d > $TRUST_STORE/scitt.json
 
+# NEW: Set blob storage backend if specified
+if [[ ! -z "${PYSCITT_BACKEND}" ]] && [[ "${PYSCITT_BACKEND}" == "blob" ]]; then
+  echo "Using blob storage backend"
+  export PYSCITT_BACKEND=blob
+  export PYSCITT_BLOB_ACCOUNT=${PYSCITT_BLOB_ACCOUNT}
+  export PYSCITT_BLOB_KEY=${PYSCITT_BLOB_KEY}
+  export PYSCITT_BLOB_CONTAINER=${PYSCITT_BLOB_CONTAINER:-contracts}
+  echo "Blob account: ${PYSCITT_BLOB_ACCOUNT}"
+  echo "Blob container: ${PYSCITT_BLOB_CONTAINER}"
+fi
+
 echo "Retrieving contract..."
 scitt retrieve-contracts /tmp/contracts \
     --url ${ContractService} \
@@ -41,48 +51,22 @@ scitt retrieve-contracts /tmp/contracts \
     --development
 
 ContractPayload="/tmp/contracts/2.$Contracts.json"
-if [ ! -f $ContractPayload ]; then 
-  echo "Contract does not exist" 
+
+if [ ! -f $ContractPayload ]; then
+  echo "Contract does not exist"
   exit 1
-fi 
+fi
 
 # Construct input by combining encrypted file system parameters and model configuration
 echo $EncfsSideCarArgs | base64 -d > ./encfs.json
-echo $PipelineConfiguration | base64 -d > ./pipeline_config.json
-jq -s '.[0] * .[1]' ./encfs.json ./pipeline_config.json > config.json
+jq '.contract_payload = env.ContractPayload' ./encfs.json > ./input.json
 
-echo "Checking contract..."
-cat $ContractPayload
-
-echo "Configuration..."
-cat ./config.json
-
-echo "Policy..."
-cat ./policy.rego
-
-# Check configuration against contract
- ./opa eval --fail -i ./config.json -d $ContractPayload -d ./policy.rego 'data.policy.allowed'
-
-echo "Policy checked, mounting encrypted storage..."
-
-if [[ -z "${EncfsSideCarArgs}" ]]; then
-  if /bin/remotefs -logfile /log.txt -loglevel trace; then
-    echo "1" > result
-  else
-    echo "0" > result
-  fi
-else
-  if /bin/remotefs -logfile /log.txt -loglevel trace -base64 $EncfsSideCarArgs; then
-    echo "1" > result
-  else
-    echo "0" > result
-  fi
+echo "Validating using OPA..."
+result=$(./opa eval --fail-defined --format values --data policy.rego --input ./input.json data.scitt.validate)
+if [ $? -ne 0 ]; then
+  echo "OPA validation failed"
+  exit 1
 fi
 
-echo "Writing training pipeline configuration..."
-
-mkdir /mnt/remote/config
+# Decode configuration
 echo $PipelineConfiguration | base64 -d > /mnt/remote/config/pipeline_config.json
-
-# Wait forever
-while true; do sleep 1; done

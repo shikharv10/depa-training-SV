@@ -136,6 +136,10 @@ TMP=`echo $TMP | jq '.ContractService.value = env.CONTRACT_SERVICE_URL'`
 TMP=`echo $TMP | jq '.ContractServiceParameters.value = env.CONTRACT_SERVICE_PARAMETERS'`
 TMP=`echo $TMP | jq '.Contracts.value = env.CONTRACTS'`
 TMP=`echo $TMP | jq '.PipelineConfiguration.value = env.PIPELINE_CONFIGURATION'`
+TMP=`echo $TMP | jq '.PyscittBackend.value = env.PYSCITT_BACKEND'`
+TMP=`echo $TMP | jq '.PyscittBlobAccount.value = env.PYSCITT_BLOB_ACCOUNT'`
+TMP=`echo $TMP | jq '.PyscittBlobKey.value = env.PYSCITT_BLOB_KEY'`
+TMP=`echo $TMP | jq '.PyscittBlobContainer.value = env.PYSCITT_BLOB_CONTAINER'`
 echo $TMP > /tmp/aci-parameters.json
 
 echo Deploying training clean room...

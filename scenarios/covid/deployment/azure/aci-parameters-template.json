@@ -19,5 +19,17 @@
   },
   "PipelineConfiguration": {
     "value": ""
+  },
+  "PyscittBackend": {
+    "value": ""
+  },
+  "PyscittBlobAccount": {
+    "value": ""
+  },
+  "PyscittBlobKey": {
+    "value": ""
+  },
+  "PyscittBlobContainer": {
+    "value": ""
   }
 }
