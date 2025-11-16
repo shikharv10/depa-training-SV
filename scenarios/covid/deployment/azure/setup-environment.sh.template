@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+echo "Setting up DEPA Training environment..."
+
+# Repository
+export REPO_ROOT=$(cd ~/depa-training-SV && git rev-parse --show-toplevel)
+export SCENARIO=covid
+
+# Azure Resources
+export AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+export AZURE_RESOURCE_GROUP=depa-contract-abstraction
+export AZURE_LOCATION=eastus
+export AZURE_KEYVAULT_ENDPOINT="depa-covid-kv.vault.azure.net"
+export AZURE_STORAGE_ACCOUNT_NAME=depacovidstorage
+
+# Storage Containers
+export AZURE_ICMR_CONTAINER_NAME=icmrcontainer
+export AZURE_COWIN_CONTAINER_NAME=cowincontainer
+export AZURE_INDEX_CONTAINER_NAME=indexcontainer
+export AZURE_MODEL_CONTAINER_NAME=modelcontainer
+export AZURE_OUTPUT_CONTAINER_NAME=outputcontainer
+
+# Container Registry
+export CONTAINER_REGISTRY=depacontractacr.azurecr.io
+export AZURE_CONTAINER_REGISTRY_USERNAME=depacontractacr
+export AZURE_CONTAINER_REGISTRY_PASSWORD="YOUR_CONTAINER_REGISTRY_PASSWORD"
+
+# Contract Service (Azure Function)
+export CONTRACT_SERVICE_URL=https://depa-contract-service.azurewebsites.net/api
+export CONTRACT_SEQ_NO="5"
+
+# Tools
+export TOOLS_HOME=$REPO_ROOT/external/confidential-sidecar-containers/tools
+
+# Blob Storage (for Azure Function)
+export PYSCITT_BACKEND=blob
+export PYSCITT_BLOB_ACCOUNT=depapilotstorage2337
+export PYSCITT_BLOB_KEY="YOUR_BLOB_STORAGE_KEY"
+export PYSCITT_BLOB_CONTAINER=contracts
+
+echo "✅ Environment variables set"
+echo "📦 Registry: $CONTAINER_REGISTRY"
+echo "🔑 Key Vault: $AZURE_KEYVAULT_ENDPOINT"
+echo "💾 Storage: $AZURE_STORAGE_ACCOUNT_NAME"
+echo "📜 Contract: #$CONTRACT_SEQ_NO"
+echo "🔗 Contract Service: $CONTRACT_SERVICE_URL"
