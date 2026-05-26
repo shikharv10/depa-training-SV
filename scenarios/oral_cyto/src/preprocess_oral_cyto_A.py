@@ -19,9 +19,9 @@
 # geojson annotations into binary masks, and write per-sample folders matching
 # dataset_config.pairing.
 
-import shutil
 from pathlib import Path
 
+import cv2
 import numpy as np
 from PIL import Image
 
@@ -30,6 +30,7 @@ from geojson_to_mask import geojson_to_mask
 
 CENTERS = {"11", "02", "03"}
 TDP_NAME = "oral_cyto_A"
+TARGET_SIZE = 256
 
 INPUT_ROOT = "/mnt/input/data"
 OUTPUT_ROOT = "/mnt/output/preprocessed"
@@ -58,12 +59,15 @@ def main():
         img = np.array(Image.open(png).convert("RGB"))
         mask = geojson_to_mask(str(gj), img.shape)
 
+        img_resized = cv2.resize(img, (TARGET_SIZE, TARGET_SIZE), interpolation=cv2.INTER_AREA)
+        mask_resized = cv2.resize(mask, (TARGET_SIZE, TARGET_SIZE), interpolation=cv2.INTER_NEAREST)
+
         sample_id = stem
         sample_folder = output_dir / f"oral_cyto_{sample_id}"
         sample_folder.mkdir(parents=True, exist_ok=True)
 
-        shutil.copy(png, sample_folder / f"oral_cyto_{sample_id}_img.png")
-        Image.fromarray(mask).save(sample_folder / f"oral_cyto_{sample_id}_seg.png")
+        Image.fromarray(img_resized).save(sample_folder / f"oral_cyto_{sample_id}_img.png")
+        Image.fromarray(mask_resized).save(sample_folder / f"oral_cyto_{sample_id}_seg.png")
         processed += 1
 
     print(f"Preprocessed {TDP_NAME}: {processed} samples → {OUTPUT_ROOT}")

@@ -11,7 +11,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python3 get-pip.py
 
 RUN pip3 install torch --index-url https://download.pytorch.org/whl/cpu
-RUN pip3 --default-timeout=1000 install numpy opencv-python pillow geopandas shapely
+RUN pip3 --default-timeout=1000 install numpy opencv-python-headless pillow geopandas shapely
 
 COPY preprocess_oral_cyto_B.py preprocess_oral_cyto_B.py
 COPY geojson_to_mask.py geojson_to_mask.py

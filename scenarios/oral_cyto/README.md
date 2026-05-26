@@ -39,6 +39,13 @@ filename):
 | `oral_cyto_A` | 11, 02, 03 | 349 |
 | `oral_cyto_B` | 12, 06, 07, 10 | 390 |
 
+The Kaggle dataset uses 2-digit numeric prefixes to identify source centers but does
+not publish the explicit prefix-to-hospital mapping. The paper (arXiv:2506.06990)
+Table 1 lists the 10 contributing centers; we partition by prefix groupings without
+claiming specific hospital identities. The resulting TDPs are defensible as
+inter-center splits (no overlap, all from distinct sources) even without named-center
+attribution.
+
 Each TDP's raw data should be placed under `data/<tdp>/` as a flat collection of paired
 `<sample>.png` (RGB tile) and `<sample>.geojson` (polygon annotations) files. Each TDP's
 preprocess container filters by its center set and rasterizes each GeoJSON into a
@@ -75,6 +82,11 @@ Each preprocess container:
 3. For each matching pair, rasterizes the polygons to a binary mask and writes a per-sample folder
    `data/<tdp>/preprocessed/oral_cyto_<sample_id>/` containing `<...>_img.png` and `<...>_seg.png`.
 
+Patches are downsampled from 2048×2048 to 256×256 during preprocessing
+(`cv2.INTER_AREA` for images, `cv2.INTER_NEAREST` for binary masks) to make
+CPU-only training tractable. This loses fine-grained nucleus shape detail
+but preserves the segmentation task at slide-region scale.
+
 The resulting layout is what `config/dataset_config.json` expects via its
 `folder_pattern + input_pattern + target_pattern` triple.
 
@@ -90,6 +102,14 @@ RGB input and 1-channel sigmoid mask output), instantiates via the framework's
 [modeller/models/model.safetensors](./modeller/models/).
 
 ## Deploy locally
+
+> **Prerequisite:** this scenario depends on the `depa-training:latest`
+> framework image, which doesn't ship pre-built. From the repo root:
+>
+> ```bash
+> cd src/train && python3 setup.py bdist_wheel && cd -
+> docker build -f ci/Dockerfile.train -t depa-training:latest src
+> ```
 
 ```bash
 ./train.sh
@@ -132,6 +152,34 @@ The training pipeline:
    emits evaluation metrics (dice, jaccard, hausdorff).
 
 Outputs are written to [modeller/output/](./modeller/output/).
+
+If all goes well, you should see output similar to the following, and
+the trained model and evaluation metrics will be saved under
+`modeller/output/`:
+
+```text
+train-1  | Merged dataset 'Oral_Cytology_set_A' into '/tmp/oral_cyto_joined'
+train-1  | Merged dataset 'Oral_Cytology_set_B' into '/tmp/oral_cyto_joined'
+train-1  | Loaded dataset splits | train: 517 | val: 148 | test: 74
+train-1  | Custom model loaded from PyTorch config
+train-1  | Optimizer Adam loaded from config
+train-1  | Scheduler CyclicLR loaded from config
+train-1  | Custom loss function loaded from config
+train-1  | Epoch 1/1 completed | Training Loss: 1.6817
+train-1  | Epoch 1/1 completed | Validation Loss: 1.3570
+train-1  | Saving trained model to /mnt/remote/output/trained_model.safetensors
+train-1  | Evaluation Metrics: {'test_loss': 1.3549, 'dice_score': 1.96e-05, 'jaccard_index': 9.82e-06, 'hausdorff_distance': 127.0}
+train-1  | CCR Training complete!
+```
+
+The 1-epoch smoke run produces near-zero segmentation metrics
+(`dice_score` ~2e-5), consistent with the model collapsing to an
+all-zero prediction on heavily class-imbalanced data (~1% positive
+pixels). This is expected — the default config prioritizes a fast
+end-to-end pipeline test over accuracy. For meaningful training,
+increase `total_epochs` in `config/templates/train_config_template.json`
+(50-100 epochs is a reasonable starting point) and consider a
+class-weighted or focal loss variant for the severe imbalance.
 
 ## Privacy properties
 
