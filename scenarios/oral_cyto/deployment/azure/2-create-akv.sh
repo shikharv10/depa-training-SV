@@ -15,10 +15,15 @@ if [[ "$AZURE_KEYVAULT_ENDPOINT" == *".vault.azure.net" ]]; then
         echo CREATING $AZURE_KEYVAULT_ENDPOINT in resource group $AZURE_RESOURCE_GROUP
         # Create Azure key vault with RBAC authorization
         az keyvault create --name $AZURE_AKV_RESOURCE_NAME --resource-group $AZURE_RESOURCE_GROUP --sku "Premium" --enable-rbac-authorization
-        # Assign RBAC roles to the resource owner so they can import keys
-        AKV_SCOPE=`az keyvault show --name $AZURE_AKV_RESOURCE_NAME --query id --output tsv`    
-        az role assignment create --role "Key Vault Crypto Officer" --assignee `az account show --query user.name --output tsv` --scope $AKV_SCOPE
-        az role assignment create --role "Key Vault Crypto User" --assignee `az account show --query user.name --output tsv` --scope $AKV_SCOPE
+        # Assign RBAC roles to the resource owner so they can import keys.
+        # SKIPPED for this scenario: the deployer's account already has
+        # "Key Vault Crypto Officer" at the subscription scope (inherits down
+        # to this KV). On a fresh subscription where the deployer lacks
+        # KV roles, re-enable the four lines below. They require
+        # `User Access Administrator` or `Owner` to execute.
+        # AKV_SCOPE=`az keyvault show --name $AZURE_AKV_RESOURCE_NAME --query id --output tsv`
+        # az role assignment create --role "Key Vault Crypto Officer" --assignee `az account show --query user.name --output tsv` --scope $AKV_SCOPE
+        # az role assignment create --role "Key Vault Crypto User" --assignee `az account show --query user.name --output tsv` --scope $AKV_SCOPE
     else
         # Name is not available — check if the vault exists in *this* subscription
         if az keyvault show --name $AZURE_AKV_RESOURCE_NAME --resource-group $AZURE_RESOURCE_GROUP >/dev/null 2>&1; then
