@@ -46,7 +46,7 @@ declare -x AZURE_KEYVAULT_ENDPOINT=
 declare -x AZURE_STORAGE_ACCOUNT_NAME=
 
 # For key import:
-declare -x CONTRACT_SERVICE_URL=https://<contract-service-url>:8000
+declare -x CONTRACT_SERVICE_URL=""  # set during Phase 4C contract signing
 declare -x TOOLS_HOME=$REPO_ROOT/external/confidential-sidecar-containers/tools
 
 # Export all variables to make them available to other scripts

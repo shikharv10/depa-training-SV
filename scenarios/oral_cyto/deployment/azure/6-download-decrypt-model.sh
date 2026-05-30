@@ -22,7 +22,7 @@ deviceName=cryptdevice1
 deviceNamePath="/dev/mapper/$deviceName"
 
 sudo cryptsetup luksOpen "$encryptedImage" "$deviceName" \
-    --key-file "$keyFilePath" \ 
+    --key-file "$keyFilePath" \
     --integrity-no-journal --persistent
 
 mountPoint=`mktemp -d`

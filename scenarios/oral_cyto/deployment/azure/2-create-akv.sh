@@ -6,7 +6,10 @@ if [[ "$AZURE_KEYVAULT_ENDPOINT" == *".vault.azure.net" ]]; then
     AZURE_AKV_RESOURCE_NAME=`echo $AZURE_KEYVAULT_ENDPOINT | awk '{split($0,a,"."); print a[1]}'`
     # Check if the Key Vault already exists
     echo "Checking if Key Vault $AZURE_AKV_RESOURCE_NAME exists..."
-    NAME_AVAILABLE=$(az rest --method post         --uri "https://management.azure.com/subscriptions/$AZURE_SUBSCRIPTION_ID/providers/Microsoft.KeyVault/checkNameAvailability?api-version=2019-09-01"         --headers "Content-Type=application/json"         --body "{\"name\": \"$AZURE_AKV_RESOURCE_NAME\", \"type\": \"Microsoft.KeyVault/vaults\"}" | jq -r '.nameAvailable')
+    NAME_AVAILABLE=$(az rest --method post \
+        --uri "https://management.azure.com/subscriptions/$AZURE_SUBSCRIPTION_ID/providers/Microsoft.KeyVault/checkNameAvailability?api-version=2019-09-01" \
+        --headers "Content-Type=application/json" \
+        --body "{\"name\": \"$AZURE_AKV_RESOURCE_NAME\", \"type\": \"Microsoft.KeyVault/vaults\"}" | jq -r '.nameAvailable')
     if [ "$NAME_AVAILABLE" == true ]; then
         echo "Key Vault $AZURE_AKV_RESOURCE_NAME does not exist. Creating it now..."
         echo CREATING $AZURE_KEYVAULT_ENDPOINT in resource group $AZURE_RESOURCE_GROUP
