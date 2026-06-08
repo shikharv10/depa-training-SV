@@ -27,12 +27,20 @@ echo "[!] Creating encrypted image..."
 
 response=`du -s $dataPath`
 read -ra arr <<< "$response"
-size=`echo "x=l($arr)/l(2); scale=0; 2^((x+0.5)/1)*2" | bc -l;`
+# Add a 64MB safety margin to the raw data size, then round UP to the next
+# power of 2. The previous formula (round-to-nearest power of 2, doubled)
+# undersized datasets whose raw size landed just below a power-of-2
+# midpoint — e.g. 42MB raw produced a 64MB image, leaving ~43MB usable
+# after LUKS+ext4 overhead, with no headroom for cp on the long tail.
+target_kb=$(($arr + 65536))
+power=$(echo "scale=0; l($target_kb)/l(2)" | bc -l)
+size=$(echo "scale=0; 2^($power+1)" | bc -l)
 
-# cryptsetup requires 16M or more
-
-if (($((size)) < 65536)); then 
-    size="65536"
+# cryptsetup requires 16M or more; floor at 128M for safety. The +64MB
+# margin above already forces size >= 128M in practice; this is
+# defense-in-depth in case the formula is ever revised.
+if (($((size)) < 131072)); then
+    size="131072"
 fi
 size=$size"K"
 
