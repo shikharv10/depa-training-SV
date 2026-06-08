@@ -1,8 +1,8 @@
 {
   "id": "d668a5af-2e13-4009-a19a-7c19404ede30",
   "schemaVersion": "0.1",
-  "startTime": "2025-09-14T00:00:00.000Z",
-  "expiryTime": "2025-10-14T00:00:00.000Z",
+  "startTime": "2026-05-31T00:00:00.000Z",
+  "expiryTime": "2026-06-30T00:00:00.000Z",
   "tdc": "",
   "tdps": [],
   "ccrp": "did:web:$CCRP_USERNAME.github.io",
@@ -16,7 +16,7 @@
       "key": {
         "type": "azure",
         "properties": {
-          "kid": "OralCyto_AFilesystemEncryptionKey",
+          "kid": "OralCytoAFilesystemEncryptionKey",
           "authority": {
             "endpoint": "sharedneu.neu.attest.azure.net"
           },
@@ -33,7 +33,7 @@
       "key": {
         "type": "azure",
         "properties": {
-          "kid": "OralCyto_BFilesystemEncryptionKey",
+          "kid": "OralCytoBFilesystemEncryptionKey",
           "authority": {
             "endpoint": "sharedneu.neu.attest.azure.net"
           },
