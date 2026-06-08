@@ -27,7 +27,9 @@ function import_key() {
 
 echo Obtaining contract service parameters...
 CONTRACT_SERVICE_URL=${CONTRACT_SERVICE_URL:-"http://localhost:8000"}
-export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters | base64 --wrap=0)
+if [ -z "${CONTRACT_SERVICE_PARAMETERS:-}" ]; then
+  export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters 2>/dev/null | base64 --wrap=0 || echo "")
+fi
 
 envsubst < ../../policy/policy-in-template.json > /tmp/policy-in.json
 export CCE_POLICY=$(az confcom acipolicygen -i /tmp/policy-in.json --debug-mode)
@@ -47,8 +49,8 @@ fi
 DATADIR=$REPO_ROOT/scenarios/$SCENARIO/data
 MODELDIR=$REPO_ROOT/scenarios/$SCENARIO/modeller
 
-import_key "OralCyto_AFilesystemEncryptionKey" $DATADIR/oral_cyto_A_key.bin
-import_key "OralCyto_BFilesystemEncryptionKey" $DATADIR/oral_cyto_B_key.bin
+import_key "OralCytoAFilesystemEncryptionKey" $DATADIR/oral_cyto_A_key.bin
+import_key "OralCytoBFilesystemEncryptionKey" $DATADIR/oral_cyto_B_key.bin
 import_key "ModelFilesystemEncryptionKey" $MODELDIR/model_key.bin
 import_key "OutputFilesystemEncryptionKey" $MODELDIR/output_key.bin
 

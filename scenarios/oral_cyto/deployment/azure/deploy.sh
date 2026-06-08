@@ -26,7 +26,9 @@ fi
 echo Obtaining contract service parameters...
 
 CONTRACT_SERVICE_URL=${CONTRACT_SERVICE_URL:-"https://localhost:8000"}
-export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters | base64 --wrap=0)
+if [ -z "${CONTRACT_SERVICE_PARAMETERS:-}" ]; then
+  export CONTRACT_SERVICE_PARAMETERS=$(curl -k -f $CONTRACT_SERVICE_URL/parameters 2>/dev/null | base64 --wrap=0 || echo "")
+fi
 
 echo Computing CCE policy...
 envsubst < ../../policy/policy-in-template.json > /tmp/policy-in.json
@@ -70,21 +72,21 @@ TMP=$(jq . encrypted-filesystem-config-template.json)
 TMP=`echo $TMP | \
   jq '.azure_filesystems[0].azure_url = "https://" + env.AZURE_STORAGE_ACCOUNT_NAME + ".blob.core.windows.net/" + env.AZURE_ORAL_CYTO_A_CONTAINER_NAME + "/data.img" + env.ORAL_CYTO_A_SAS_TOKEN' | \
   jq '.azure_filesystems[0].mount_point = "/mnt/remote/oral_cyto_A"' | \
-  jq '.azure_filesystems[0].key.kid = "OralCyto_AFilesystemEncryptionKey"' | \
+  jq '.azure_filesystems[0].key.kid = "OralCytoAFilesystemEncryptionKey"' | \
   jq '.azure_filesystems[0].key.kty = env.AZURE_AKV_KEY_TYPE' | \
   jq '.azure_filesystems[0].key.akv.endpoint = env.AZURE_KEYVAULT_ENDPOINT' | \
   jq '.azure_filesystems[0].key.akv.bearer_token = env.BEARER_TOKEN' | \
-  jq '.azure_filesystems[0].key_derivation.label = "OralCyto_AFilesystemEncryptionKey"' | \
+  jq '.azure_filesystems[0].key_derivation.label = "OralCytoAFilesystemEncryptionKey"' | \
   jq '.azure_filesystems[0].key_derivation.salt = "9b53cddbe5b78a0b912a8f05f341bcd4dd839ea85d26a08efaef13e696d999f4"'`
 
 TMP=`echo $TMP | \
   jq '.azure_filesystems[1].azure_url = "https://" + env.AZURE_STORAGE_ACCOUNT_NAME + ".blob.core.windows.net/" + env.AZURE_ORAL_CYTO_B_CONTAINER_NAME + "/data.img" + env.ORAL_CYTO_B_SAS_TOKEN' | \
   jq '.azure_filesystems[1].mount_point = "/mnt/remote/oral_cyto_B"' | \
-  jq '.azure_filesystems[1].key.kid = "OralCyto_BFilesystemEncryptionKey"' | \
+  jq '.azure_filesystems[1].key.kid = "OralCytoBFilesystemEncryptionKey"' | \
   jq '.azure_filesystems[1].key.kty = env.AZURE_AKV_KEY_TYPE' | \
   jq '.azure_filesystems[1].key.akv.endpoint = env.AZURE_KEYVAULT_ENDPOINT' | \
   jq '.azure_filesystems[1].key.akv.bearer_token = env.BEARER_TOKEN' | \
-  jq '.azure_filesystems[1].key_derivation.label = "OralCyto_BFilesystemEncryptionKey"' | \
+  jq '.azure_filesystems[1].key_derivation.label = "OralCytoBFilesystemEncryptionKey"' | \
   jq '.azure_filesystems[1].key_derivation.salt = "9b53cddbe5b78a0b912a8f05f341bcd4dd839ea85d26a08efaef13e696d999f4"'`
 
 TMP=`echo $TMP | \
@@ -119,6 +121,8 @@ TMP=`echo $TMP | jq '.ContractService.value = env.CONTRACT_SERVICE_URL'`
 TMP=`echo $TMP | jq '.ContractServiceParameters.value = env.CONTRACT_SERVICE_PARAMETERS'`
 TMP=`echo $TMP | jq '.Contracts.value = env.CONTRACTS'`
 TMP=`echo $TMP | jq '.PipelineConfiguration.value = env.PIPELINE_CONFIGURATION'`
+TMP=`echo $TMP | jq '.containerRegistryUsername.value = env.ACR_USER'`
+TMP=`echo $TMP | jq '.containerRegistryPassword.value = env.ACR_PASSWORD'`
 echo $TMP > /tmp/aci-parameters.json
 
 echo Deploying training clean room...

@@ -83,23 +83,35 @@
       "metadata": {
         "description": "Pipeline configuration"
       }
+    },
+    "containerRegistryUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Username for the container registry."
+      }
+    },
+    "containerRegistryPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for the container registry."
+      }
     }
   },
   "resources": [
     {
       "type": "Microsoft.ContainerInstance/containerGroups",
       "apiVersion": "2023-05-01",
-      "name": "[parameters(name)]",
-      "location": "[parameters(location)]",
+      "name": "[parameters('name')]",
+      "location": "[parameters('location')]",
       "properties": {
         "confidentialComputeProperties": {
-          "ccePolicy": "[parameters(ccePolicy)]"
+          "ccePolicy": "[parameters('ccePolicy')]"
         },
         "containers": [
           {
             "name": "depa-training",
             "properties": {
-              "image": "[concat(parameters(containerRegistry), /depa-training:latest)]",
+              "image": "[concat(parameters('containerRegistry'), '/depa-training:latest')]",
               "command": [
                 "/bin/bash",
                 "run.sh"
@@ -122,30 +134,30 @@
           {
             "name": "encrypted-storage-sidecar",
             "properties": {
-              "image": "[concat(parameters(containerRegistry), /depa-training-encfs:latest)]",
+              "image": "[concat(parameters('containerRegistry'), '/depa-training-encfs:latest')]",
               "command": [
                 "/encfs.sh"
               ],
               "environmentVariables": [
                 {
                   "name": "EncfsSideCarArgs",
-                  "value": "[parameters(EncfsSideCarArgs)]"
+                  "value": "[parameters('EncfsSideCarArgs')]"
                 },
                 {
                   "name": "ContractService",
-                  "value": "[parameters(ContractService)]"
+                  "value": "[parameters('ContractService')]"
                 },
                 {
                   "name": "Contracts",
-                  "value": "[parameters(Contracts)]"
+                  "value": "[parameters('Contracts')]"
                 },
                 {
                   "name": "ContractServiceParameters",
-                  "value": "[parameters(ContractServiceParameters)]"
+                  "value": "[parameters('ContractServiceParameters')]"
                 },
                 {
                   "name": "PipelineConfiguration",
-                  "value": "[parameters(PipelineConfiguration)]"
+                  "value": "[parameters('PipelineConfiguration')]"
                 }
               ],
               "volumeMounts": [
@@ -168,11 +180,18 @@
         ],
         "sku": "Confidential",
         "osType": "Linux",
-        "restartPolicy": "[parameters(restartPolicy)]",
+        "restartPolicy": "[parameters('restartPolicy')]",
         "volumes": [
           {
             "name": "remotemounts",
             "emptydir": {}
+          }
+        ],
+        "imageRegistryCredentials": [
+          {
+            "server": "[parameters('containerRegistry')]",
+            "username": "[parameters('containerRegistryUsername')]",
+            "password": "[parameters('containerRegistryPassword')]"
           }
         ]
       }

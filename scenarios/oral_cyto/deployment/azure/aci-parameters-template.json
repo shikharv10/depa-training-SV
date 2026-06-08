@@ -19,5 +19,11 @@
   },
   "PipelineConfiguration": {
     "value": ""
+  },
+  "containerRegistryUsername": {
+    "value": ""
+  },
+  "containerRegistryPassword": {
+    "value": ""
   }
 }
